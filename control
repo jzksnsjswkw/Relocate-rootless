@@ -4,7 +4,7 @@ Depends: mobilesubstrate, firmware (>= 15.0), com.opa334.altlist
 Conflicts: me.nepeta.relocate, me.nepeta.relocatereborn, com.jzksnsjswkw.relocate-roothide, com.jzksnsjswkw.relocate-rootless
 Replaces: me.nepeta.relocate, me.nepeta.relocatereborn, com.jzksnsjswkw.relocate-roothide, com.jzksnsjswkw.relocate-rootless
 Provides: me.nepeta.relocate
-Version: 1.2.0
+Version: 1.2.1
 Architecture: iphoneos-arm
 Maintainer: jzksnsjswkw
 Author: jzksnsjswkw <214893178@qq.com>

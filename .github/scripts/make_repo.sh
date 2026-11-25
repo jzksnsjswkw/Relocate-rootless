@@ -314,6 +314,16 @@ for name in icon.png relocate.png pusher.png; do
     fi
 done
 
+# icon.png is what a package gets when its own control names no icon — and it is
+# also what Pusher's control points at, because its repository writes icon.png
+# rather than a project-specific name. It therefore carries Pusher's picture, not
+# Relocate's: Relocate names relocate.png in its own control, so it never falls
+# back here.
+#
+# The rule this settles: the icon a client shows in the *installed* list comes
+# from the deb's own control, not from this index. Sharing one fallback between
+# two projects made both rows wear the same picture.
+#
 # The fallback must exist — a missing icon.png is a whole source of grey squares.
 if [ ! -f "$OUT/icon.png" ]; then
     echo "error: .github/scripts/icon.png is missing — package rows will show placeholders" >&2
