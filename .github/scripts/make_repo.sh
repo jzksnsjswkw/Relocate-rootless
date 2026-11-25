@@ -320,5 +320,14 @@ if [ ! -f "$OUT/icon.png" ]; then
     exit 1
 fi
 
+# The landing page. GitHub Pages serves index.html for a directory request, which
+# is what makes https://.../repo/ a readable page instead of a login prompt for a
+# directory listing.
+if [ -f .github/scripts/index.html ]; then
+    cp .github/scripts/index.html "$OUT/index.html"
+else
+    echo "warning: .github/scripts/index.html is missing — the source URL will show a file listing" >&2
+fi
+
 echo "Indexed $(grep -c '^Package: ' "$OUT/Packages") package(s) into $OUT/"
 ls -la "$OUT"
