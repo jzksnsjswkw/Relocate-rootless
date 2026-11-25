@@ -13,6 +13,12 @@ on:
   # The build runs; the upload step is skipped because there is no tag.
   workflow_dispatch:
 
+# `contents: write` is what lets the last step attach the debs to the release.
+# Without it the upload fails with "Resource not accessible by integration",
+# which reads like a broken token rather than a missing permission.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
