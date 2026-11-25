@@ -65,11 +65,26 @@ jobs:
             --pattern '*.deb' --dir staged
           ls -la staged
 
+      # The index is per repository, but the source is shared with Pusher: both
+      # publish to the same Pages branch. Rebuilding purely from this release's
+      # debs drops every other package — which is what the first run did, leaving
+      # the source listing only the two Relocate builds.
+      #
+      # The previous Packages file is fetched and handed to the script as a
+      # carry-over, so stanzas for packages this release does not touch survive
+      # untouched. Merging text rather than re-downloading every old deb keeps the
+      # job to one small HTTP request.
+      - name: Fetch the current index
+        run: |
+          curl -fsS "${{ env.PAGES_URL || 'https://jzksnsjswkw.github.io/repo' }}/Packages" \
+            -o /tmp/previous-Packages || echo "no existing index — building from scratch"
+
       - name: Build the index
         run: |
           # dpkg-deb is what reads the control fields, and macOS has no dpkg.
           brew install dpkg
-          ./.github/scripts/make_repo.sh "${{ steps.tag.outputs.value }}" staged/*.deb
+          PREVIOUS_INDEX=/tmp/previous-Packages \
+            ./.github/scripts/make_repo.sh "${{ steps.tag.outputs.value }}" staged/*.deb
           ls -la repo/debs 2>/dev/null || true
 
       - name: Publish to Pages

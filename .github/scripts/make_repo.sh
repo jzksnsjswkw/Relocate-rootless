@@ -38,6 +38,14 @@ fi
 OUT="${OUT_DIR:-repo}"
 mkdir -p "$OUT"
 
+# Packages this project does not own, carried over from the previous index.
+#
+# The source on Pages is shared between projects, so a rebuild from one release's
+# debs would erase every other package. The previous Packages file is read here
+# and any stanza whose package name this run does not produce is written back
+# verbatim — URLs, checksums and all — because nothing about it has changed.
+PREVIOUS_INDEX="${PREVIOUS_INDEX:-}"
+
 # The debs to index. Every release publishes two builds and both belong in the
 # index; older releases stay on their own release pages and are not repeated here,
 # because a client shows the newest version it finds and the rest is noise.
@@ -166,6 +174,32 @@ for deb in "${DEBS[@]}"; do
         echo ""
     } >> "$OUT/Packages"
 done
+
+# What this run produced, so the carry-over below knows which stanzas are stale.
+NEW_NAMES=$(grep '^Package: ' "$OUT/Packages" | sed 's|^Package: ||' | sort)
+
+if [ -n "$PREVIOUS_INDEX" ] && [ -f "$PREVIOUS_INDEX" ]; then
+    # Stanzas are separated by blank lines; each starts with `Package:`.
+    awk -v RS='' 'NR>0 { print $0 "\n" }' "$PREVIOUS_INDEX" | {
+        current=""
+        while IFS= read -r line; do
+            if [ -z "$line" ]; then
+                if [ -n "$current" ]; then
+                    name=$(printf '%s\n' "$current" | sed -n 's|^Package: ||p' | head -1)
+                    if [ -n "$name" ] && ! printf '%s\n' "$NEW_NAMES" | grep -qx "$name"; then
+                        printf '%s\n\n' "$current" >> "$OUT/Packages"
+                    fi
+                fi
+                current=""
+            else
+                current="$current$line
+"
+            fi
+        done
+    }
+    carried=$(( $(grep -c '^Package: ' "$OUT/Packages") - $(printf '%s\n' "$NEW_NAMES" | wc -l | tr -d ' ') ))
+    echo "Carried over $carried package(s) from the previous index"
+fi
 
 # Mirrored debs are copied into the published tree, because their Filename points
 # at this source. Publishing them to the Pages branch is what makes the dependency
