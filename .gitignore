@@ -1,0 +1,31 @@
+# Build output.
+.theos/
+obj/
+*.o
+*.d
+
+# Deb output.
+packages/*
+
+# The generated package index. `make_repo.sh` writes it into a directory that is
+# pushed to the separate `repo` repository, not this one.
+repo/
+
+# Editor and OS noise.
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Crash reports and captured logs, which land here when pulled off the device.
+*.ips
+*.log
+
+# Screenshots straight off the device. The ones the package page uses are cropped
+# and renamed into .github/scripts/depiction/shots/.
+IMG_*.png
+IMG_*.jpeg
+
+# Python bytecode from the checkers.
+__pycache__/
+*.pyc

@@ -1,0 +1,122 @@
+name: Release
+
+on:
+  release:
+    # `published`, not `created`. The `created` action fires when a *draft* is
+    # saved; a release made straight to published — which is what `gh release
+    # create` does, and what the web form does unless a draft is saved first —
+    # only fires `published`. Listening for `created` alone is why the 3.0.0 beta
+    # release produced no build.
+    types:
+      - published
+  # So a workflow edit can be tried without cutting a release to try it with.
+  # The build runs; the upload step is skipped because there is no tag.
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+
+    - uses: actions/checkout@v5
+
+    - name: Check cache
+      id: verify-cache
+      # `::set-output` was retired in 2023; the replacement is a line on stdout
+      # written to the file named by $GITHUB_OUTPUT.
+      run: |
+        echo "heads=`git ls-remote https://github.com/roothide/theos | head -n 1 | cut -f 1`-`git ls-remote https://github.com/xybp888/iOS-SDKs | head -n 1 | cut -f 1`" >> $GITHUB_OUTPUT
+
+    - name: Use cache
+      id: cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ github.workspace }}/theos
+        key: ${{ runner.os }}-${{ steps.verify-cache.outputs.heads }}
+
+    - name: Theos Setup (Setup)
+      uses: NyaMisty/theos-action@master
+      with: 
+        theos-src: https://github.com/roothide/theos
+
+    # Parallel builds. Theos checks the make version and warns when it is Apple's
+    # 3.81, which cannot run jobs in parallel; on a project this size that is the
+    # difference between five minutes and two per scheme.
+    #
+    # The action above tries to do this itself and fails twice over: it writes
+    # `PATH="…" >> $GITHUB_ENV`, and `$GITHUB_ENV` needs a bare `NAME=VALUE`, so
+    # the quotes end up inside the variable name and nothing is set; and the path
+    # it names is `/usr/local/opt/…`, Homebrew's Intel prefix, while `macos-latest`
+    # is arm64 and puts it under `/opt/homebrew`.
+    #
+    # `brew --prefix make` rather than either literal, so this does not depend on
+    # which prefix the runner uses.
+    - name: Use GNU make
+      run: |
+        brew install make
+        echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
+
+    - name: Prepare AltList
+      run: |
+        git clone https://github.com/opa334/AltList.git
+        cd AltList
+        chmod +x install_to_theos.sh && ./install_to_theos.sh
+        # install_to_theos.sh only installs the framework; the headers must be copied manually.
+        # AltList.h goes into $THEOS/include/ and all ATL headers into $THEOS/include/AltList/
+        # so that <AltList/AltList.h> and its inner <AltList/ATL*.h> imports resolve.
+        mkdir -p $THEOS/include/AltList
+        cp AltList.h $THEOS/include/
+        cp *.h $THEOS/include/AltList/
+        # Each scheme links AltList from $THEOS/lib/iphone/<scheme>, which
+        # install_to_theos.sh does not populate — it only installs the framework.
+        # Copy the same build into both so neither scheme fails to link.
+        for scheme in roothide rootless; do
+          mkdir -p $THEOS/lib/iphone/$scheme
+          cp -R ./.theos/obj/AltList.framework $THEOS/lib/iphone/$scheme/
+        done
+        cd ..
+
+    - name: remove old package
+      run: |
+        rm -rf packages
+
+    # `<scheme> make clean` rather than `make clean`: the clean target itself
+    # depends on the scheme, and cleaning without one leaves the previous
+    # scheme's staged files in place.
+    - name: Build package - rootless
+      run: |
+        THEOS_PACKAGE_SCHEME=rootless make clean
+        THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1 make package
+
+    - name: Build package - roothide
+      run: |
+        THEOS_PACKAGE_SCHEME=roothide make clean
+        THEOS_PACKAGE_SCHEME=roothide FINALPACKAGE=1 make package
+
+    # The `~` in a prerelease's version is dpkg's ordering marker — it is what
+    # makes 3.0.0~beta2 sort before 3.0.0 — and GitHub rejects it in an asset
+    # name, rewriting it to `.`. The upload then fails, because the action looks
+    # for an existing asset under the *local* name and finds the rewritten one.
+    #
+    # Renaming the file here rather than dropping the `~` from the version: the
+    # version is what apt compares, and it is not worth getting wrong for the sake
+    # of a filename.
+    - name: Normalise package names
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        cd packages
+        for f in *.deb; do
+          mv "$f" "${f//\~/.}"
+        done
+        ls -la
+
+    - name: Release
+      uses: softprops/action-gh-release@v3
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: ${{ github.workspace }}/packages/*.deb
+        # Re-running a release must replace its assets rather than fail on them.
+        overwrite_files: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

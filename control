@@ -1,0 +1,20 @@
+Package: com.jzksnsjswkw.relocate
+Name: Relocate
+Depends: mobilesubstrate, firmware (>= 15.0), com.opa334.altlist
+Conflicts: me.nepeta.relocate, me.nepeta.relocatereborn, com.jzksnsjswkw.relocate-roothide, com.jzksnsjswkw.relocate-rootless
+Replaces: me.nepeta.relocate, me.nepeta.relocatereborn, com.jzksnsjswkw.relocate-roothide, com.jzksnsjswkw.relocate-rootless
+Provides: me.nepeta.relocate
+Version: 1.2.0
+Architecture: iphoneos-arm
+Maintainer: jzksnsjswkw
+Author: jzksnsjswkw <214893178@qq.com>
+Section: Tweaks
+Icon: https://jzksnsjswkw.github.io/repo/icon.png
+Depiction: https://jzksnsjswkw.github.io/repo/
+Description: 按应用和全局修改 GPS 定位
+ 分别控制每个应用和系统服务上报的坐标，支持全局默认位置与按应用覆盖
+ .
+ - 地图选点，支持搜索与收藏
+ - 摇杆微调，按当前缩放自动调整步长
+ - 国内坐标自动转换（GCJ-02 / WGS-84）
+ - 可单独设置「查找」等服务的位置

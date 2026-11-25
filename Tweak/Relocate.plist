@@ -1,0 +1,14 @@
+{
+	Filter = {
+		// Apps only, via the class they all link. Daemons that also link
+		// CLLocationManager match this filter too, so the real gate is the
+		// executable check in %ctor, which returns before any hook is installed.
+		// Substrate's filter has no exclusion list, and dropping the Classes key
+		// would mean enumerating every target app by bundle id.
+		Classes = (
+			"CLLocationManager",
+			"CLLocationManagerDelegate"
+		);
+		Mode = "Any";
+	};
+}

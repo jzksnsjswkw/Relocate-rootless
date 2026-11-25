@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>INFO</string>
+			<key>label</key>
+			<string>APP</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.jzksnsjswkw.relocate/ReloadPrefs</string>
+			<key>alignment</key>
+			<string>3</string>
+			<key>cell</key>
+			<string>PSSegmentCell</string>
+			<key>default</key>
+			<integer>0</integer>
+			<key>defaults</key>
+			<string>com.jzksnsjswkw.relocate</string>
+			<key>key</key>
+			<string>Enabled</string>
+			<key>validTitles</key>
+			<array>
+				<string>DEFAULT</string>
+				<string>OVERRIDE</string>
+				<string>USE_REAL</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>0</integer>
+				<integer>1</integer>
+				<integer>2</integer>
+			</array>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.jzksnsjswkw.relocate/ReloadPrefs</string>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<string></string>
+			<key>defaults</key>
+			<string>com.jzksnsjswkw.relocate</string>
+			<key>detail</key>
+			<string>RLCLocationPickerViewController</string>
+			<key>key</key>
+			<string>Location</string>
+			<key>label</key>
+			<string>LOCATION</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>App settings</string>
+</dict>
+</plist>

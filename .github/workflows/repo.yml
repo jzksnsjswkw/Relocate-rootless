@@ -1,0 +1,91 @@
+name: Repository
+
+# Builds the Sileo source from a release's assets and publishes it to Pages.
+#
+# Triggered by the build finishing, not by the release.
+#
+# Both workflows used to listen for `release: published`, so they started in the
+# same second: the index asked for the release's debs before the build had
+# uploaded any, and the run failed with "no assets to download" on every release.
+# Waiting for `Release` to complete is the actual dependency — the index lists the
+# two files that job attaches.
+on:
+  workflow_run:
+    workflows: [Release]
+    types:
+      - completed
+  # Manual runs need the tag explicitly: there is no event to read it from, so the
+  # download step would look for a release called "".
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to index (e.g. v1.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    # A failed build has no debs to index, and publishing an index built from
+    # nothing would replace a working source with an empty one.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # One tag either way: from the build that finished, or from the dispatch input.
+      - name: Resolve the tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # From the dispatch input, or from the build that just finished.
+          #
+          # `workflow_run` carries no release object, so there is nothing to read a
+          # tag from directly. `head_branch` holds the tag name when a release
+          # triggered the build — GitHub reports the tag in that field for a
+          # tag-triggered run — and this is the only value that survives to here.
+          #
+          # Not `gh release list --isLatest`: a prerelease is never "latest", so a
+          # beta would resolve to the wrong tag or to none at all.
+          TAG="${{ inputs.tag || github.event.workflow_run.head_branch }}"
+          if [ -z "$TAG" ]; then
+            echo "no tag — the build had no branch and no tag was given" >&2
+            exit 1
+          fi
+          echo "value=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the release's debs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p staged
+          gh release download "${{ steps.tag.outputs.value }}" \
+            --pattern '*.deb' --dir staged
+          ls -la staged
+
+      - name: Build the index
+        run: |
+          # dpkg-deb is what reads the control fields, and macOS has no dpkg.
+          brew install dpkg
+          ./.github/scripts/make_repo.sh "${{ steps.tag.outputs.value }}" staged/*.deb
+          ls -la repo/debs 2>/dev/null || true
+
+      - name: Publish to Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          # The source lives in `jzksnsjswkw/repo`, which is what
+          # https://jzksnsjswkw.github.io/repo/ serves. Publishing to this
+          # repository's own gh-pages would put the index at /Relocate-rootless/
+          # instead, and every URL `make_repo.sh` writes points at /repo/ — so the
+          # debs, the icons and the package page would all 404.
+          #
+          # That needs a token with write access to the other repository; the
+          # workflow's own token cannot reach it.
+          deploy_key: ${{ secrets.REPO_DEPLOY_KEY }}
+          external_repository: jzksnsjswkw/repo
+          publish_dir: ./repo
+          publish_branch: gh-pages
+          destination_dir: .
+          keep_files: false

@@ -1,0 +1,29 @@
+{
+  "ENABLED" = "Enabled";
+
+  "APPLICATIONS" = "Applications";
+  "LOCATION" = "Location";
+  "NO_GPS" = "No GPS mode";
+  "NO_GPS_INFO" = "Disables GPS, slightly increases battery life, but fake location data is less believable.";
+  "ENABLED_TOGGLE_INFO" = "The switch above enables all functionality of this tweak. If disabled, your location won't be changed anywhere.";
+
+
+  "ADVANCED" = "Advanced";
+  "FAVORITES_MANAGER" = "Favorites manager";
+  "SYSTEM_SERVICES" = "System services";
+
+  "ARE_YOU_SURE_TO_RESET_PREFS" = "Are you sure you want to reset all your preferences? This cannot be undone.";
+  "OK" = "OK";
+  "CANCEL" = "Cancel";
+  "RESET_PREFS" = "Restore default settings and respring";
+  "SOURCE_CODE" = "Source code";
+  "DONATE_TO_NEPETA" = "Donate to Nepeta";
+  "SUPPORT_ME" = "Support me!";
+
+  "FOOTER_CREDIT" = "Relocate - iOS 15+ port";
+
+  "GLOBAL" = "Default position";
+  "GLOBAL_INFO" = "Applies to every app this tweak is loaded into, unless the app has its own override. Requires the app to be enabled in Bootstrap's App List.";
+  "APP" = "Per-app position";
+  "APP_INFO" = "Set a position for one app only. Takes priority over the default position, and works even when that is off.";
+}

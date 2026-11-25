@@ -1,0 +1,23 @@
+{
+  "ENABLED" = "启用";
+  "APPLICATIONS" = "应用";
+  "LOCATION" = "位置";
+  "NO_GPS" = "无 GPS 模式";
+  "NO_GPS_INFO" = "关闭 GPS，略微省电，但伪造的位置数据更容易被识别。";
+  "ENABLED_TOGGLE_INFO" = "上方开关控制本插件的全部功能。关闭后任何应用的位置都不会被改写。";
+  "ADVANCED" = "高级";
+  "FAVORITES_MANAGER" = "收藏管理";
+  "SYSTEM_SERVICES" = "系统服务";
+  "ARE_YOU_SURE_TO_RESET_PREFS" = "确定要重置所有设置吗？此操作无法撤销。";
+  "OK" = "好";
+  "RESET_PREFS" = "重置设置";
+  "DONATE_TO_NEPETA" = "赞助 Nepeta";
+
+  "FOOTER_CREDIT" = "Relocate · iOS 15+ 移植版";
+
+  "GLOBAL" = "默认位置";
+  "GLOBAL_INFO" = "对本插件已注入的所有 App 生效，除非该 App 单独设置了位置。需要先在 Bootstrap 的 App List 里为目标 App 打开注入。";
+  "APP" = "按应用设置位置";
+  "APP_INFO" = "只对单个 App 生效，优先级高于默认位置，且默认位置关闭时依然有效。";
+  "SECTION_CONFIGURED" = "已设置";
+}

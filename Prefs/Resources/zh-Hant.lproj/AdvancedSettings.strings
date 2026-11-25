@@ -1,0 +1,9 @@
+{
+  "ENABLED" = "啟用";
+  "VIEW" = "地图视图";
+  "STANDARD" = "标准";
+  "SATELLITE" = "衛星";
+  "HYBRID" = "混合";
+  "ALTITUDE" = "海拔（米）";
+  "ALTITUDE_OVERRIDE" = "覆寫海拔";
+}

@@ -1,0 +1,39 @@
+/* Strings shown by the controller code (not by plist-driven cells). */
+
+"SEARCH_PLACEHOLDER" = "Search for a place";
+"SAVE" = "Save";
+"CANCEL" = "Cancel";
+"OK" = "OK";
+"EDIT" = "Edit";
+"CONFIRM" = "Confirm";
+"DELETE" = "Delete";
+"RENAME" = "Rename";
+"ADVANCED_SETTINGS" = "Advanced settings";
+"SELECTED_LOCATION" = "Selected location";
+"LONG_PRESS_HINT" = "Long press on the map to select a location,\n\"Save\" to confirm your choice.";
+"PICK_LOCATION_TITLE" = "Pick location";
+"FAVORITES_TITLE" = "Favorites";
+"ADD_TO_FAVORITES" = "Add to favorites";
+"ENTER_NAME" = "Enter name";
+"FAVORITE_SAVED" = "Saved!";
+"ERROR" = "Error";
+"APPLICATIONS_TITLE" = "Applications";
+
+/* Per-app mode subtitles in the app list. */
+"MODE_DEFAULT" = "Default";
+"MODE_OVERRIDE" = "Custom override";
+"MODE_USE_REAL" = "Use real location";
+
+"GLOBAL" = "Global override";
+"APP" = "Application override";
+"APPLICATIONS" = "Applications";
+"LOCATION" = "Location";
+"ENABLED" = "Enabled";
+"NO_GPS" = "No GPS mode";
+"ADVANCED" = "Advanced";
+"FAVORITES_MANAGER" = "Favorites manager";
+"SYSTEM_SERVICES" = "System services";
+"RESET_PREFS" = "Reset preferences";
+"JOYSTICK" = "Joystick";
+"NO_SELECTED_LOCATION" = "No position chosen yet.";
+"OK_CONFIRM" = "Done";

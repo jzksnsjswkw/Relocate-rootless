@@ -1,0 +1,38 @@
+/* 控制器代码里的字符串（plist 单元格的文本由各自 .strings 提供）。 */
+
+"SEARCH_PLACEHOLDER" = "搜索地点";
+"SAVE" = "保存";
+"CANCEL" = "取消";
+"OK" = "好";
+"EDIT" = "编辑";
+"CONFIRM" = "完成";
+"DELETE" = "删除";
+"RENAME" = "重命名";
+"ADVANCED_SETTINGS" = "高级设置";
+"SELECTED_LOCATION" = "已选位置";
+"LONG_PRESS_HINT" = "长按地图选择位置，\n点「保存」确认。";
+"PICK_LOCATION_TITLE" = "选择位置";
+"FAVORITES_TITLE" = "收藏";
+"ADD_TO_FAVORITES" = "加入收藏";
+"ENTER_NAME" = "输入名称";
+"FAVORITE_SAVED" = "已保存";
+"ERROR" = "错误";
+"APPLICATIONS_TITLE" = "应用";
+
+"MODE_DEFAULT" = "默认";
+"MODE_OVERRIDE" = "自定义";
+"MODE_USE_REAL" = "使用真实位置";
+
+"GLOBAL" = "全局覆盖";
+"APP" = "按应用覆盖";
+"APPLICATIONS" = "应用";
+"LOCATION" = "位置";
+"ENABLED" = "启用";
+"NO_GPS" = "无 GPS 模式";
+"ADVANCED" = "高级";
+"FAVORITES_MANAGER" = "收藏管理";
+"SYSTEM_SERVICES" = "系统服务";
+"RESET_PREFS" = "重置设置";
+"JOYSTICK" = "摇杆";
+"NO_SELECTED_LOCATION" = "还没有选择位置。";
+"OK_CONFIRM" = "确定";
