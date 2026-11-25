@@ -271,6 +271,11 @@ RELEASE
 # source root — a name, not a field: there is no `Icon:` key in the Release format,
 # and a file called anything else is never fetched.
 # Clients pick the scale that matches the screen, so all three are published.
+#
+# These are NOT generated from the package icon. They were once, with sips, and
+# that replaced the maintainer's own source icon with a copy of the tweak's — a
+# change nobody asked for, on a file this build has no business deciding the
+# contents of. They are committed as they are and copied verbatim.
 for name in CydiaIcon CydiaIcon@2x CydiaIcon@3x; do
     src=".github/scripts/$name.png"
     if [ ! -f "$src" ]; then
