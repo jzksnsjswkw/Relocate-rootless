@@ -41,10 +41,18 @@ mkdir -p "$OUT"
 # The debs to index. Every release publishes two builds and both belong in the
 # index; older releases stay on their own release pages and are not repeated here,
 # because a client shows the newest version it finds and the rest is noise.
+#
+# The `${arr[@]+...}` form is not decoration: this script runs under `set -u`, and
+# on bash 3.2 — which is what macOS still ships — expanding an empty array counts
+# as an unbound variable and aborts the run. With no mirrored packages that is the
+# normal case, so the guard has to be there.
 if [ "$#" -gt 0 ]; then
-    DEBS=("$@" "${MIRRORED_DEBS[@]}")
+    DEBS=("$@")
 else
-    DEBS=(packages/*.deb "${MIRRORED_DEBS[@]}")
+    DEBS=(packages/*.deb)
+fi
+if [ "${#MIRRORED_DEBS[@]}" -gt 0 ]; then
+    DEBS+=(${MIRRORED_DEBS[@]+"${MIRRORED_DEBS[@]}"})
 fi
 
 : > "$OUT/Packages"
@@ -164,7 +172,7 @@ done
 # resolvable without the user adding a second source.
 if [ "${#MIRRORED_DEBS[@]}" -gt 0 ]; then
     mkdir -p "$OUT/debs"
-    for deb in "${MIRRORED_DEBS[@]}"; do
+    for deb in ${MIRRORED_DEBS[@]+"${MIRRORED_DEBS[@]}"}; do
         cp -f "$deb" "$OUT/debs/$(basename "$deb" | tr '~' '.')"
     done
 fi
