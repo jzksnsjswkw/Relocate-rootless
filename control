@@ -9,7 +9,7 @@ Architecture: iphoneos-arm
 Maintainer: jzksnsjswkw
 Author: jzksnsjswkw <214893178@qq.com>
 Section: Tweaks
-Icon: https://jzksnsjswkw.github.io/repo/icon.png
+Icon: https://jzksnsjswkw.github.io/repo/relocate.png
 Depiction: https://jzksnsjswkw.github.io/repo/
 Description: 按应用和全局修改 GPS 定位
  分别控制每个应用和系统服务上报的坐标，支持全局默认位置与按应用覆盖

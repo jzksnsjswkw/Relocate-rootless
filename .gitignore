@@ -4,8 +4,11 @@ obj/
 *.o
 *.d
 
-# Deb output.
+# Deb output. `packages/mirrored` is the exception: those debs are dependencies
+# this source publishes, so they are inputs, not output — the index cannot be
+# rebuilt without them.
 packages/*
+!packages/mirrored/
 
 # The generated package index. `make_repo.sh` writes it into a directory that is
 # pushed to the separate `repo` repository, not this one.

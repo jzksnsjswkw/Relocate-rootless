@@ -23,11 +23,15 @@ shift
 # is one branch, and referenced absolutely because a client fetches it directly.
 DEPICTION_JSON="${DEPICTION_JSON:-$PAGES_URL/depiction/relocate.json}"
 
-# Packages this source mirrors rather than publishes, if any. Relocate has none:
-# its dependencies (ellekit, preferenceloader, AltList) are published by their own
-# authors and every client already has a source that carries them. The hook stays
-# because the branch below that serves mirrored debs from this index is the same
-# one that would otherwise be dead code.
+# Packages this source mirrors rather than publishes. libSandyXpc is a runtime
+# dependency of Pusher, which shares this source — and its upstream release is a
+# separate project that no default source carries, so a client installing Pusher
+# would stop on an unresolved dependency. Serving it from here is what makes the
+# source self-contained.
+#
+# These are the upstream release's own files, unchanged: rebuilding a dependency
+# would put a second build of one library on the device, and the upstream release
+# is what its author tests.
 MIRRORED_DEBS=()
 if [ -d "${MIRROR_DIR:-packages/mirrored}" ]; then
     while IFS= read -r -d '' file; do
@@ -142,7 +146,15 @@ for deb in "${DEBS[@]}"; do
         # The icon and depiction are optional fields carried straight through from
         # the package's own control. They are what the client shows on the package
         # page, and a stanza that omits them gets a grey placeholder.
-        icon=$(field Icon)
+        # The icon is rewritten per project. The control files all point at the
+        # source's shared icon.png, which is what made every row wear the same
+        # picture; the index is where a per-project one can be assigned, because
+        # the project is known from the package name.
+        case "$name" in
+            com.jzksnsjswkw.relocate*) icon="$PAGES_URL/relocate.png" ;;
+            com.jzksnsjswkw.pusher*)   icon="$PAGES_URL/pusher.png" ;;
+            *) icon=$(field Icon) ;;
+        esac
         [ -n "$icon" ] && echo "Icon: $icon"
         depiction=$(field Depiction)
         [ -n "$depiction" ] && echo "Depiction: $depiction"
@@ -152,7 +164,14 @@ for deb in "${DEBS[@]}"; do
         # list — is a JSON document the client fetches and renders; the `Description`
         # field below is only the one-line summary some clients still show. The
         # path is absolute because the client resolves it against nothing.
-        [ -n "$DEPICTION_JSON" ] && echo "Sileodepiction: $DEPICTION_JSON"
+        # Only for packages this project publishes. A mirrored dependency's page
+        # is not ours to write, and pointing libSandyXpc at Relocate's depiction
+        # showed the wrong screenshots on its row.
+        case "$name" in
+            com.jzksnsjswkw.relocate*)
+                [ -n "$DEPICTION_JSON" ] && echo "Sileodepiction: $DEPICTION_JSON"
+                ;;
+        esac
         echo "Filename: $deb_url"
         echo "Size: $size"
         echo "MD5sum: $md5"
@@ -187,7 +206,22 @@ if [ -n "$PREVIOUS_INDEX" ] && [ -f "$PREVIOUS_INDEX" ]; then
                 if [ -n "$current" ]; then
                     name=$(printf '%s\n' "$current" | sed -n 's|^Package: ||p' | head -1)
                     if [ -n "$name" ] && ! printf '%s\n' "$NEW_NAMES" | grep -qx "$name"; then
-                        printf '%s\n\n' "$current" >> "$OUT/Packages"
+                        # The Icon line is rewritten on the way through. A carried
+                        # stanza still names whatever icon its own build wrote, and
+                        # for packages built before icons were split per project
+                        # that is the shared icon.png.
+                        case "$name" in
+                            com.jzksnsjswkw.relocate*) carried_icon="$PAGES_URL/relocate.png" ;;
+                            com.jzksnsjswkw.pusher*)   carried_icon="$PAGES_URL/pusher.png" ;;
+                            *) carried_icon="" ;;
+                        esac
+                        if [ -n "$carried_icon" ]; then
+                            printf '%s\n' "$current" \
+                                | sed "s|^Icon: .*|Icon: $carried_icon|" >> "$OUT/Packages"
+                        else
+                            printf '%s\n' "$current" >> "$OUT/Packages"
+                        fi
+                        printf '\n' >> "$OUT/Packages"
                     fi
                 fi
                 current=""
@@ -264,16 +298,27 @@ if [ -d "$DEPICTION_DIR" ]; then
     rsync -a --exclude banner.png "$DEPICTION_DIR/" "$OUT/depiction/"
 fi
 
-# The package's own icon, referenced by the `Icon:` field in each control file.
-# Served from here rather than from inside the deb because Sileo shows the icon
+# Package icons.
+#
+# Served from here rather than from inside the deb because a client shows the icon
 # before anything is installed — a `file://` path only resolves afterwards, and to
 # a path that differs by packaging scheme.
-PACKAGE_ICON="${PACKAGE_ICON:-.github/scripts/icon.png}"
-if [ ! -f "$PACKAGE_ICON" ]; then
-    echo "error: $PACKAGE_ICON is missing — every package row will show a placeholder" >&2
+#
+# One file per project, because this source carries more than one: a single
+# icon.png had every row wearing Relocate's icon, including Pusher's. A package
+# without its own entry falls back to icon.png, so a newly added project still
+# gets a picture rather than a placeholder.
+for name in icon.png relocate.png pusher.png; do
+    if [ -f ".github/scripts/$name" ]; then
+        cp ".github/scripts/$name" "$OUT/$name"
+    fi
+done
+
+# The fallback must exist — a missing icon.png is a whole source of grey squares.
+if [ ! -f "$OUT/icon.png" ]; then
+    echo "error: .github/scripts/icon.png is missing — package rows will show placeholders" >&2
     exit 1
 fi
-cp "$PACKAGE_ICON" "$OUT/icon.png"
 
 echo "Indexed $(grep -c '^Package: ' "$OUT/Packages") package(s) into $OUT/"
 ls -la "$OUT"
