@@ -323,8 +323,69 @@ fi
 # The landing page. GitHub Pages serves index.html for a directory request, which
 # is what makes https://.../repo/ a readable page instead of a login prompt for a
 # directory listing.
+#
+# Rendered here rather than fetched by the browser: a page that reads Packages over
+# fetch shows "loading" first and nothing at all without JavaScript. The index is
+# already parsed in this script, so the rows are written once and the page is
+# static.
 if [ -f .github/scripts/index.html ]; then
-    cp .github/scripts/index.html "$OUT/index.html"
+    ROWS=$(mktemp)
+    count=0
+    # One row per project, not per build: Relocate ships roothide and rootless and
+    # listing both would read as four plugins rather than two.
+    awk -v RS='' '
+        {
+            pkg=""; name=""; desc=""; ver=""; arch=""
+            n = split($0, lines, "\n")
+            for (i = 1; i <= n; i++) {
+                line = lines[i]
+                if (line ~ /^Package: /)          pkg  = substr(line, 10)
+                else if (line ~ /^Name: /)        name = substr(line, 7)
+                else if (line ~ /^Version: /)     ver  = substr(line, 10)
+                else if (line ~ /^Architecture: /) arch = substr(line, 15)
+                else if (line ~ /^Description: /) desc = substr(line, 14)
+            }
+            if (pkg == "") next
+
+            base = pkg
+            sub(/-(roothide|rootless)$/, "", base)
+            display = name
+            sub(/-(roothide|rootless)$/, "", display)
+            if (display == "") display = base
+            flavour = (arch ~ /arm64e/) ? "roothide" : "rootless"
+
+            if (base in seen) {
+                if (index(archs[base], flavour) == 0) archs[base] = archs[base] " / " flavour
+                next
+            }
+            seen[base] = 1
+            archs[base] = flavour
+            order[++count] = base
+            names[base] = display
+            versions[base] = ver
+            descs[base] = desc
+        }
+        END {
+            for (i = 1; i <= count; i++) {
+                b = order[i]
+                printf "    <li><p class=\"name\">%s</p><p class=\"desc\">%s</p><p class=\"meta\">%s \xc2\xb7 %s</p></li>\n", \
+                    names[b], descs[b], versions[b], archs[b]
+            }
+        }
+    ' "$OUT/Packages" > "$ROWS"
+
+    # The project count is the number of rows, not of packages.
+    total=$(grep -c '<li>' "$ROWS" || echo 0)
+
+    # Substitution without sed: the replacement text carries slashes, quotes and
+    # non-ASCII, and every sed invocation of that needs an escape fought over.
+    awk -v rows="$ROWS" -v total="$total" '
+        /<!--PACKAGE_COUNT-->/ { sub(/<!--PACKAGE_COUNT-->/, total) }
+        /<!--PACKAGE_ROWS-->/  { while ((getline l < rows) > 0) print l; next }
+        { print }
+    ' .github/scripts/index.html > "$OUT/index.html"
+
+    rm -f "$ROWS"
 else
     echo "warning: .github/scripts/index.html is missing — the source URL will show a file listing" >&2
 fi
