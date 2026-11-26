@@ -81,10 +81,15 @@ jobs:
 
       - name: Build the index
         run: |
-          # dpkg-deb is what reads the control fields, and macOS has no dpkg.
-          brew install dpkg
-          PREVIOUS_INDEX=/tmp/previous-Packages \
-            ./.github/scripts/make_repo.sh "${{ steps.tag.outputs.value }}" staged/*.deb
+          # dpkg-deb reads the control fields, and macOS has no dpkg.
+          brew install dpkg zstd
+          python3 -m pip install --quiet python-debian
+
+          python3 ./.github/scripts/make_index.py \
+            --tag "${{ steps.tag.outputs.value }}" \
+            --out repo \
+            --previous /tmp/previous-Packages \
+            --debs staged/*.deb
           ls -la repo/debs 2>/dev/null || true
 
       - name: Publish to Pages
