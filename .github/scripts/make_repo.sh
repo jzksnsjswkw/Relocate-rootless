@@ -156,6 +156,10 @@ for deb in "${DEBS[@]}"; do
             com.jzksnsjswkw.pusher*)   icon="$PAGES_URL/pusher.png" ;;
             *) icon=$(field Icon) ;;
         esac
+        # No icon of its own is left blank, not filled in with this project's: a
+        # mirrored dependency that never shipped an Icon had every row pointing at
+        # whatever icon.png held. A client shows a generic glyph for a package with
+        # no icon, which is honest; borrowing someone else's is not.
         [ -n "$icon" ] && echo "Icon: $icon"
         depiction=$(field Depiction)
         [ -n "$depiction" ] && echo "Depiction: $depiction"
@@ -214,7 +218,10 @@ if [ -n "$PREVIOUS_INDEX" ] && [ -f "$PREVIOUS_INDEX" ]; then
                         case "$name" in
                             com.jzksnsjswkw.relocate*) carried_icon="$PAGES_URL/relocate.png" ;;
                             com.jzksnsjswkw.pusher*)   carried_icon="$PAGES_URL/pusher.png" ;;
-                            *) carried_icon="" ;;
+                            # Anything else keeps whatever it had. A carried
+                            # stanza may already point at an icon of its own;
+                            # rewriting it with this project's was wrong.
+                            *) carried_icon="keep" ;;
                         esac
                         # A carried stanza predates this run, so it still carries
                         # the scheme suffix in its `Name:` — which is what made the
@@ -223,7 +230,9 @@ if [ -n "$PREVIOUS_INDEX" ] && [ -f "$PREVIOUS_INDEX" ]; then
                         printf '%s\n' "$current" \
                             | sed -e 's|^Name: \(.*\)-roothide$|Name: \1|' \
                                   -e 's|^Name: \(.*\)-rootless$|Name: \1|' \
-                            | if [ -n "$carried_icon" ]; then
+                            | if [ "$carried_icon" = "keep" ]; then
+                                  cat
+                              elif [ -n "$carried_icon" ]; then
                                   sed "s|^Icon: .*|Icon: $carried_icon|"
                               else
                                   cat
