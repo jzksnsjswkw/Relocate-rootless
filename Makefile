@@ -66,6 +66,19 @@ $(shell mkdir -p $(THEOS_PROJECT_DIR)/.theos && \
             $(THEOS_PROJECT_DIR)/control > $(RELOCATE_CONTROL))
 _THEOS_DEB_PACKAGE_CONTROL_PATH := $(RELOCATE_CONTROL)
 
+# The deb's filename, not just its control.
+#
+# `deb.mk` sets THEOS_PACKAGE_NAME from the control file with `:=`, which expands
+# at include time — before the per-scheme control above exists, so it read the
+# unpatched one and named the file `com.jzksnsjswkw.relocate_...` while the
+# package inside was `-roothide`. The control and the filename disagreeing is
+# confusing to read and worse to download by hand.
+#
+# Reassigned here, after include, so the filename carries the same name the
+# package declares. `_THEOS_DEB_PACKAGE_FILENAME` is a recursively expanded
+# variable, so it picks this up when the packaging rule runs.
+THEOS_PACKAGE_NAME := $(RELOCATE_PACKAGE_NAME)
+
 SUBPROJECTS += Tweak
 SUBPROJECTS += Prefs
 
