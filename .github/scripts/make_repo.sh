@@ -50,6 +50,14 @@ mkdir -p "$OUT"
 # verbatim — URLs, checksums and all — because nothing about it has changed.
 PREVIOUS_INDEX="${PREVIOUS_INDEX:-}"
 
+# Package names this project used to publish under, and does not any more.
+#
+# A carried stanza is written back on the assumption that it belongs to some other
+# project; when the name is an old one of ours the stanza is a leftover that would
+# sit beside the current package as a second, uninstallable row. Dropped rather
+# than carried.
+OBSOLETE_PACKAGES="com.jzksnsjswkw.relocate com.jzksnsjswkw.relocate-roothide"
+
 # The debs to index. Every release publishes two builds and both belong in the
 # index; older releases stay on their own release pages and are not repeated here,
 # because a client shows the newest version it finds and the rest is noise.
@@ -204,7 +212,13 @@ if [ -n "$PREVIOUS_INDEX" ] && [ -f "$PREVIOUS_INDEX" ]; then
             if [ -z "$line" ]; then
                 if [ -n "$current" ]; then
                     name=$(printf '%s\n' "$current" | sed -n 's|^Package: ||p' | head -1)
-                    if [ -n "$name" ] && ! printf '%s\n' "$NEW_NAMES" | grep -qx "$name"; then
+                    obsolete=no
+                    for old in $OBSOLETE_PACKAGES; do
+                        [ "$name" = "$old" ] && obsolete=yes
+                    done
+                    if [ "$obsolete" = yes ]; then
+                        echo "Dropped obsolete $name from the previous index"
+                    elif [ -n "$name" ] && ! printf '%s\n' "$NEW_NAMES" | grep -qx "$name"; then
                         # The Icon line is rewritten on the way through. A carried
                         # stanza still names whatever icon its own build wrote, and
                         # for packages built before icons were split per project
