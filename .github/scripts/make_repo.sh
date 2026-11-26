@@ -112,15 +112,16 @@ for deb in "${DEBS[@]}"; do
     provides=""
     # The display name sticks to Relocate's own packages. A mirrored dependency
     # keeps whatever name its control carries — it is not this project's to rename.
-    case "$name" in
-        com.jzksnsjswkw.relocate*)
-            case "$arch" in
-                iphoneos-arm64e) display_name="Relocate-roothide" ;;
-                iphoneos-arm64) display_name="Relocate-rootless" ;;
-            esac
-            ;;
-        *) display_name=$(field Name) ;;
-    esac
+    # The scheme suffix belongs in the package identifier, not in the name a client
+    # shows. `Package:` has to differ or apt treats the two builds as one package
+    # and installs whichever it saw last; the row the user reads should not.
+    #
+    # Stripped rather than mapped per project, because every package that ships two
+    # builds carries the same suffix and each one wants it gone.
+    display_name=$(field Name)
+    display_name=${display_name%-roothide}
+    display_name=${display_name%-rootless}
+    [ -n "$display_name" ] || display_name="$name"
     case "$name" in
         *-roothide|*-rootless) provides="Provides: ${name%-*}" ;;
     esac
@@ -215,12 +216,18 @@ if [ -n "$PREVIOUS_INDEX" ] && [ -f "$PREVIOUS_INDEX" ]; then
                             com.jzksnsjswkw.pusher*)   carried_icon="$PAGES_URL/pusher.png" ;;
                             *) carried_icon="" ;;
                         esac
-                        if [ -n "$carried_icon" ]; then
-                            printf '%s\n' "$current" \
-                                | sed "s|^Icon: .*|Icon: $carried_icon|" >> "$OUT/Packages"
-                        else
-                            printf '%s\n' "$current" >> "$OUT/Packages"
-                        fi
+                        # A carried stanza predates this run, so it still carries
+                        # the scheme suffix in its `Name:` — which is what made the
+                        # source list "Relocate-roothide" and "Relocate-rootless" as
+                        # two differently-named rows.
+                        printf '%s\n' "$current" \
+                            | sed -e 's|^Name: \(.*\)-roothide$|Name: \1|' \
+                                  -e 's|^Name: \(.*\)-rootless$|Name: \1|' \
+                            | if [ -n "$carried_icon" ]; then
+                                  sed "s|^Icon: .*|Icon: $carried_icon|"
+                              else
+                                  cat
+                              fi >> "$OUT/Packages"
                         printf '\n' >> "$OUT/Packages"
                     fi
                 fi
