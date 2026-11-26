@@ -109,22 +109,17 @@ for deb in "${DEBS[@]}"; do
     # would treat as yet another package.
     pkg_name="$name"
     display_name=""
-    provides=""
     # The display name sticks to Relocate's own packages. A mirrored dependency
     # keeps whatever name its control carries — it is not this project's to rename.
-    # The scheme suffix belongs in the package identifier, not in the name a client
-    # shows. `Package:` has to differ or apt treats the two builds as one package
-    # and installs whichever it saw last; the row the user reads should not.
+    # One name per package, one row per package.
     #
-    # Stripped rather than mapped per project, because every package that ships two
-    # builds carries the same suffix and each one wants it gone.
+    # The two builds of Relocate share a `Package:` name and differ in
+    # `Architecture`, which is how apt is meant to be used: a client picks the
+    # stanza matching its own architecture and lists a single row. Giving each
+    # build its own name — which is what the `-roothide` / `-rootless` suffix did —
+    # made them two unrelated packages that both appeared in the list.
     display_name=$(field Name)
-    display_name=${display_name%-roothide}
-    display_name=${display_name%-rootless}
     [ -n "$display_name" ] || display_name="$name"
-    case "$name" in
-        *-roothide|*-rootless) provides="Provides: ${name%-*}" ;;
-    esac
 
     {
         echo "Package: $pkg_name"
@@ -132,7 +127,6 @@ for deb in "${DEBS[@]}"; do
         # which is an implementation detail the reader has no use for.
         [ -n "$display_name" ] && echo "Name: $display_name"
         echo "Version: $version"
-        [ -n "$provides" ] && echo "$provides"
         echo "Architecture: $arch"
         echo "Section: $(field_or Section Tweaks)"
         echo "Priority: optional"
@@ -223,13 +217,7 @@ if [ -n "$PREVIOUS_INDEX" ] && [ -f "$PREVIOUS_INDEX" ]; then
                             # rewriting it with this project's was wrong.
                             *) carried_icon="keep" ;;
                         esac
-                        # A carried stanza predates this run, so it still carries
-                        # the scheme suffix in its `Name:` — which is what made the
-                        # source list "Relocate-roothide" and "Relocate-rootless" as
-                        # two differently-named rows.
                         printf '%s\n' "$current" \
-                            | sed -e 's|^Name: \(.*\)-roothide$|Name: \1|' \
-                                  -e 's|^Name: \(.*\)-rootless$|Name: \1|' \
                             | if [ "$carried_icon" = "keep" ]; then
                                   cat
                               elif [ -n "$carried_icon" ]; then

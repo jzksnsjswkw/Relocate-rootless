@@ -12,18 +12,13 @@
 // dpkgInvalid=1 in every app and the tweak bailed out before installing a single
 // hook. Both spellings are therefore tried, and a build-time fallback keeps the
 // check meaningful without blocking the hooks.
-// The installed package name carries a scheme suffix — com.jzksnsjswkw.relocate
-// is built twice, once per layout — so the dpkg manifest is one of three names.
-// Checking only the bare one reported dpkgInvalid=1 in every process.
-#define PLIST_PREFIX @"/var/lib/dpkg/info/com.jzksnsjswkw.relocate"
+// One package, built for two layouts. The dpkg manifest is the same file either
+// way, so a single path is enough — the scheme only decides where the files land.
+#define PLIST_PATH @"/var/lib/dpkg/info/com.jzksnsjswkw.relocate-rootless.list"
 
 static BOOL rlc_installed(void) {
     NSFileManager *fm = [NSFileManager defaultManager];
-
-    for (NSString *suffix in @[ @"", @"-roothide", @"-rootless" ]) {
-        NSString *plain = [NSString stringWithFormat:@"%@%@.list", PLIST_PREFIX, suffix];
-        if ([fm fileExistsAtPath:plain]) return YES;
-    }
+    if ([fm fileExistsAtPath:PLIST_PATH]) return YES;
 
     // On roothide the package database lives under a directory whose name changes
     // on every jailbreak, so a literal path cannot be right. jbroot() translates
@@ -33,11 +28,8 @@ static BOOL rlc_installed(void) {
     // ".jbroot-*" directory, which worked but only because the first candidate was
     // tried blind, and would silently keep trying the wrong root if several were
     // ever present.
-    for (NSString *suffix in @[ @"", @"-roothide", @"-rootless" ]) {
-        NSString *plain = [NSString stringWithFormat:@"%@%@.list", PLIST_PREFIX, suffix];
-        const char *resolved = jbroot(plain.UTF8String);
-        if (resolved && [fm fileExistsAtPath:@(resolved)]) return YES;
-    }
+    const char *resolved = jbroot(PLIST_PATH.UTF8String);
+    if (resolved && [fm fileExistsAtPath:@(resolved)]) return YES;
 
     // Still invisible from inside an app's sandbox. The dylib is running, which
     // means dpkg unpacked it and the filter matched - that is enough evidence of a
@@ -558,7 +550,7 @@ static void rlc_apply_preferences(void) {
 %ctor {
     dpkgInvalid = !rlc_installed();
     RLC_LOG(@"ctor: process=%@ dpkgInvalid=%d plistPath=%@",
-            [NSProcessInfo processInfo].processName, dpkgInvalid, PLIST_PREFIX);
+            [NSProcessInfo processInfo].processName, dpkgInvalid, PLIST_PATH);
 
     // Someone smarter than me invented this.
     // https://www.reddit.com/r/jailbreak/comments/4yz5v5/questionremote_messages_not_enabling/d6rlh88/
