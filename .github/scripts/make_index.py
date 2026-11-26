@@ -313,12 +313,16 @@ def main():
             )
         # Anything not in DEPICTION is still a package the source carries, and
         # leaving it off the page would misrepresent what is installable.
+        listed = set()
         for stanza in published + carried:
             name = stanza.get("Package", "")
             if any(name.startswith(f"com.jzksnsjswkw.{p}") for p in DEPICTION):
                 continue
-            if any(name in r for r in rows):
+            # One row per package: the two builds of a mirrored dependency differ
+            # only by architecture, and listing both reads as two plugins.
+            if name in listed:
                 continue
+            listed.add(name)
             rows.append(
                 '    <li><p class="name">{}</p>'
                 '<p class="desc">{}</p>'
