@@ -27,10 +27,11 @@ repo/
 *.ips
 *.log
 
-# Screenshots straight off the device. The ones the package page uses are cropped
-# and renamed into .github/scripts/depiction/shots/.
+# Screenshots straight off the device, and the directory a workflow run creates.
+# The ones the package page uses live on the repo's `tools` branch, not here.
 IMG_*.png
 IMG_*.jpeg
+tools/
 
 # Python bytecode from the checkers.
 __pycache__/
