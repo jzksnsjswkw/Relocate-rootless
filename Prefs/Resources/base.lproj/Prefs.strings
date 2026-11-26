@@ -26,4 +26,5 @@
   "GLOBAL_INFO" = "Applies to every app this tweak is loaded into, unless the app has its own override. Requires the app to be enabled in Bootstrap's App List.";
   "APP" = "Per-app position";
   "APP_INFO" = "Set a position for one app only. Takes priority over the default position, and works even when that is off.";
+  "UPSTREAM_REPO" = "Upstream repository";
 }

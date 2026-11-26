@@ -41,13 +41,30 @@
     [self respring:sender];
 }
 
-// The GitHub row used to be an HBLinkTableCell, which comes from CepheiPrefs -
-// not available here. A PSButtonCell plus this action opens the same URL.
+// The links at the bottom of the page.
 //
-// Points at the original author's repository. The earlier 404 was a wrong owner
-// name: "Nepeta" is the display name, "NepetaDev" is the GitHub account.
+// They used to be HBLinkTableCells, which come from CepheiPrefs and are not
+// available here; a PSButtonCell plus an action opens the same URL.
+//
+// Two rows rather than one, because they answer different questions: where this
+// build came from, and where its source is. Pointing a single row at the upstream
+// repository left the reader no way to reach the code that actually produced what
+// they installed.
+//
+// The upstream URL's owner is "NepetaDev", not "Nepeta" — the latter is the display
+// name, and the wrong one 404s.
+- (void)openUpstreamRepo:(id)sender {
+    [self rlc_openURL:@"https://github.com/NepetaDev/Relocate"];
+}
+
+// This fork's own repository, which is where the iOS 15+ build and the source of
+// these settings actually live.
 - (void)openGitHub:(id)sender {
-    NSURL *url = [NSURL URLWithString:@"https://github.com/NepetaDev/Relocate"];
+    [self rlc_openURL:@"https://github.com/jzksnsjswkw/Relocate-rootless"];
+}
+
+- (void)rlc_openURL:(NSString *)string {
+    NSURL *url = [NSURL URLWithString:string];
     UIApplication *app = [UIApplication sharedApplication];
     if ([app respondsToSelector:@selector(openURL:options:completionHandler:)]) {
         [app openURL:url options:@{} completionHandler:nil];

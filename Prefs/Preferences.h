@@ -6,5 +6,6 @@
 @interface RLCPrefsListController : PSListController
     - (void)resetPrefs:(id)sender;
     - (void)respring:(id)sender;
+    - (void)openUpstreamRepo:(id)sender;
     - (void)openGitHub:(id)sender;
 @end

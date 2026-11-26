@@ -20,4 +20,5 @@
   "APP" = "按应用设置位置";
   "APP_INFO" = "只对单个 App 生效，优先级高于默认位置，且默认位置关闭时依然有效。";
   "SECTION_CONFIGURED" = "已设置";
+  "UPSTREAM_REPO" = "原项目仓库";
 }

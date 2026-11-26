@@ -20,4 +20,5 @@
   "APP" = "依應用程式設定位置";
   "APP_INFO" = "只對單一 App 生效，優先順序高於預設位置，且預設位置關閉時依然有效。";
   "SECTION_CONFIGURED" = "已設定";
+  "UPSTREAM_REPO" = "原專案倉庫";
 }
