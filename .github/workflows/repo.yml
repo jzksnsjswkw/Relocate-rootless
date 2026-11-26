@@ -79,6 +79,23 @@ jobs:
           curl -fsS "${{ env.PAGES_URL || 'https://jzksnsjswkw.github.io/repo' }}/Packages" \
             -o /tmp/previous-Packages || echo "no existing index — building from scratch"
 
+      - name: Fetch the shared index builder
+        # One implementation for every project that publishes into this source.
+        # Each project used to carry its own copy; two copies of the carry-forward
+        # rule means the one nobody edited that day deletes the other project's
+        # rows, which is how Relocate disappeared from the source once already.
+        #
+        # A tarball rather than a checkout or submodule: the two repositories are
+        # independent, and neither should gain a repository dependency for one
+        # script.
+        run: |
+          mkdir -p tools
+          curl -fsSL --retry 3 --max-time 60 \
+            "https://github.com/jzksnsjswkw/repo/archive/refs/heads/tools.tar.gz" \
+            -o tools.tar.gz
+          tar -xzf tools.tar.gz --strip-components=2 -C tools repo-tools/tools
+          ls -la tools
+
       - name: Build the index
         run: |
           # dpkg-deb reads the control fields, and macOS has no dpkg.
@@ -88,7 +105,8 @@ jobs:
           python3 -m venv .venv
           .venv/bin/pip install --quiet python-debian
 
-          .venv/bin/python ./.github/scripts/make_index.py \
+          .venv/bin/python tools/make_index.py \
+            --project relocate \
             --tag "${{ steps.tag.outputs.value }}" \
             --out repo \
             --previous /tmp/previous-Packages \
