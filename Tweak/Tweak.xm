@@ -634,46 +634,31 @@ static void rlc_apply_preferences(void) {
     }
     if (!gRLCBundleIdentifier) gRLCBundleIdentifier = @"";
 
-    // Only hook this app if the configuration says it should be hooked.
+    // Hooks are installed unconditionally in every app that links CoreLocation.
     //
-    // Loading the dylib and installing the hooks are separate decisions: the
-    // filter matches on the CLLocationManager class, so every app that links
-    // CoreLocation gets the dylib. What it should not get is a replaced
-    // CLLocationManager - there is no reason to sit in the message path of an app
-    // the user has not configured.
+    // This used to be gated on the configuration: an app whose mode was "Default"
+    // with the global override off, or whose mode was "Use real location", got no
+    // hooks at all. The reasoning was that an unconfigured app had no business
+    // sitting in a replaced CLLocationManager's message path.
     //
-    // Checked here rather than on each -location call because a hook group cannot
-    // be uninstalled: %init happens once, so this is the only point where the
-    // decision can be made, and it is re-made the next time the app launches.
+    // That gate could not be undone. A hook group is installed once, by %init, and
+    // cannot be removed; skipping the install also skipped
+    // -registerPreferenceChangeBlock, so the process had no listener at all. The
+    // result was a one-way door: switching an app from "Use real location" to
+    // "Custom" while it was running did nothing, and the settings page gave no
+    // sign of it — you had to force-quit the app. The opposite direction worked,
+    // because those processes already had hooks, which made the whole thing look
+    // arbitrary.
     //
-    // Daemons are exempt. They have no per-app setting and no entry in the app
-    // list, so the gate would refuse them on every launch; Find My is meant to
-    // report the spoofed position like any other client.
-    BOOL isDaemon = [processName isEqualToString:@"findmydeviced"]
-                 || [processName isEqualToString:@"fmfd"]
-                 || [processName isEqualToString:@"fmflocatord"];
-
-    if (!isDaemon) {
-        NSString *bundleForGate = gRLCBundleIdentifier;
-        BOOL shouldHook = NO;
-
-        if (globalEnabled) shouldHook = YES;
-
-        NSNumber *appMode = [preferences objectForKey:
-                             [NSString stringWithFormat:@"App_%@_Enabled", bundleForGate]];
-        int mode = appMode ? [appMode intValue] : 0;
-        if (mode == 1) shouldHook = YES;      // per-app override
-        if (mode == 2) shouldHook = NO;       // explicitly left alone
-
-        if (!shouldHook) {
-            RLC_LOG(@"ctor: %@ left unhooked (global=%d appMode=%d)",
-                    bundleForGate, globalEnabled, mode);
-            return;
-        }
-    } else {
-        RLC_LOG(@"ctor: %@ is a location source, hooking regardless of config",
-                processName);
-    }
+    // The upstream project installs hooks unconditionally for the same reason,
+    // and pays nothing for it: -location returns %orig whenever `enabled` is NO,
+    // which is what rlc_apply_preferences() sets for both the unconfigured and the
+    // "Use real location" cases. The message path is unchanged for those apps —
+    // one compare and a return.
+    //
+    // Daemons are not special-cased: they want the same hooks, and the gate that
+    // used to exempt them existed only because the configuration gate would
+    // otherwise have refused them on every launch.
 
     // Apply the current values now, and again whenever the prefs change.
     //
