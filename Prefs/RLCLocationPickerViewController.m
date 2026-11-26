@@ -73,6 +73,15 @@
     // navigationItem.searchController: that form put the field underneath the
     // map view in this navigation stack, so touches landed on the map instead of
     // the bar. Owning the bar and adding it last guarantees it is on top.
+    //
+    // There used to be a UISearchController here as well, built around the same
+    // results controller and then never presented. It was left over from the
+    // navigationItem.searchController version and had no remaining caller, but it
+    // was not inert: -initWithSearchResultsController: gives it ownership of the
+    // results controller, and the code below gives that same controller a parent
+    // of its own, so its view had two owners. Nothing about that arrangement was
+    // defined, and on iOS 16.6 it is a reported candidate for a search field that
+    // stops taking touches. The bar below needs none of it.
     self.searchBar = [[UISearchBar alloc] init];
     self.searchBar.delegate = self;
     self.searchBar.placeholder = RLCLocalized(@"SEARCH_PLACEHOLDER");
@@ -90,12 +99,6 @@
     self.searchBarBackdrop.alpha = 0.7;      // let some of the map show through
     self.searchBarBackdrop.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.searchBarBackdrop];
-
-    self.searchController = [[UISearchController alloc]
-                             initWithSearchResultsController:self.searchResultsController];
-    self.searchController.searchResultsUpdater = self.searchResultsController;
-    self.searchController.obscuresBackgroundDuringPresentation = NO;
-    self.searchController.hidesNavigationBarDuringPresentation = NO;
 
     // Both views must be in the hierarchy before a constraint can join them.
     // The results list was previously constrained to a search bar that had not
@@ -172,8 +175,6 @@
     [self.lpView setPinGestureTarget:self];
     [self addRecentreButton];
 
-    self.definesPresentationContext = YES;
-
     self.favorites = [NSMutableArray new];
     self.dictionary = [NSMutableDictionary new];
 
@@ -203,6 +204,17 @@
 }
 
 - (void)viewWillAppear:(BOOL)animated {
+    // The superclass call is not optional.
+    //
+    // It was missing, copied from the upstream project whose controllers are built
+    // in -initForContentSize: rather than -viewDidLoad. UIKit does its own work
+    // here - appearance transitions, the navigation item hand-off, restoring the
+    // first responder the navigation stack expects - and a controller that skips it
+    // can end up with a view that draws correctly and takes no touches. That is
+    // exactly the symptom reported on iOS 16.6.1, and this is the only lifecycle
+    // override in this file that was skipping it.
+    [super viewWillAppear:animated];
+
     [self setTitle:[self navigationTitle]];
     [self.navigationItem setTitle:[self navigationTitle]];
 

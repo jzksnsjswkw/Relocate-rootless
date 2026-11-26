@@ -9,7 +9,6 @@
 
 @interface RLCLocationPickerViewController : PSViewController <UISearchBarDelegate>
 
-@property (nonatomic, retain) UISearchController *searchController;
 @property (nonatomic, retain) UISearchBar *searchBar;
 @property (nonatomic, retain) RLCLocationPickerSearchResultsViewController *searchResultsController;
 -(void)commitSelection;

@@ -33,6 +33,10 @@ IMG_*.png
 IMG_*.jpeg
 tools/
 
+# IDA databases and traces from reading locationd. Gigabytes, and reproducible
+# from the binary the device ships.
+reverse/
+
 # Python bytecode from the checkers.
 __pycache__/
 *.pyc
