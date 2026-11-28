@@ -55,6 +55,34 @@ CLLocationCoordinate2D coordinate;
 NSDictionary *locationDict;
 RLCAnalogStickWindow *analogStickWindow;
 
+// Every CLLocation this tweak hands to an app is built with -initWithCoordinate:
+// and never passes through locationd, so the private -type it would otherwise
+// report is 0 — a value a real fix never has. On iOS 15+ locationd stamps a real
+// fix with a non-zero type (13 for GPS, 1 for the simulated channel Locus uses),
+// which makes 0 the odd one out: an app that looks at this field sees "not one of
+// ours" and can tell the fix was constructed in-process.
+//
+// -type is a readonly property over fLocation.type, an int in a private struct, so
+// there is no setter to call. Writing the field directly would mean hard-coding
+// that struct's layout, which differs between iOS releases and would corrupt
+// neighbouring fields the moment it moved. Replacing the getter instead costs one
+// pointer comparison and cannot touch anything it does not own.
+//
+// Only locations this tweak created are affected: the original fix, and anything
+// another component built, still report whatever the system gave them.
+static NSHashTable *rlcFabricatedLocations;
+
+static void rlc_mark_fabricated(CLLocation *location) {
+    if (!location) return;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        rlcFabricatedLocations = [NSHashTable hashTableWithOptions:
+                                  NSHashTableWeakMemory | NSHashTableObjectPointerPersonality];
+    });
+    [rlcFabricatedLocations addObject:location];
+}
+
+
 @interface NSNull (Relocate)
 -(int)intValue;
 -(BOOL)boolValue;
@@ -96,7 +124,7 @@ RLCAnalogStickWindow *analogStickWindow;
         altitude = [locationDict[@"Altitude"] doubleValue];
     }
 
-    return [[CLLocation alloc] initWithCoordinate:coordinate
+    CLLocation *replacement = [[CLLocation alloc] initWithCoordinate:coordinate
         altitude:altitude
         horizontalAccuracy:location.horizontalAccuracy
         verticalAccuracy:location.verticalAccuracy
@@ -104,6 +132,8 @@ RLCAnalogStickWindow *analogStickWindow;
         speed:0
         timestamp:location.timestamp
     ];
+    rlc_mark_fabricated(replacement);
+    return replacement;
 }
 
 +(CLLocation *)getFabricatedLocation {
@@ -112,7 +142,7 @@ RLCAnalogStickWindow *analogStickWindow;
         altitude = [locationDict[@"Altitude"] doubleValue];
     }
 
-    return [[CLLocation alloc]
+    CLLocation *fabricated = [[CLLocation alloc]
         initWithCoordinate:coordinate
         altitude:altitude
         horizontalAccuracy:10
@@ -121,6 +151,8 @@ RLCAnalogStickWindow *analogStickWindow;
         speed:0
         timestamp:[NSDate date]
     ];
+    rlc_mark_fabricated(fabricated);
+    return fabricated;
 }
 
 +(CLHeading *)getFabricatedHeading {
@@ -307,6 +339,28 @@ RLCAnalogStickWindow *analogStickWindow;
 }
 
 @end
+
+%group RelocateTelemetry
+
+%hook CLLocation
+
+// Reports 1, the value locationd uses for a fix delivered through the simulated
+// channel.
+//
+// The point of the substitution is that 0 is the only value a real fix never has:
+// it means "this object was built by an alloc/init in the current process". Both
+// 1 and 13 are ordinary values an app can receive, so either one clears that tell.
+// 1 was chosen because it is exactly what the system reports for a fix that did
+// come from the simulated channel — the arrangement Locus uses — so a fix carrying
+// it is indistinguishable from one the platform itself produced.
+-(int)type {
+    if ([rlcFabricatedLocations containsObject:self]) return 1;
+    return %orig;
+}
+
+%end
+
+%end
 
 %group Relocate
 
@@ -670,6 +724,9 @@ static void rlc_apply_preferences(void) {
     rlc_apply_preferences();
 
     %init(Relocate);
+    // Separate group: the -type substitution applies whether or not a coordinate is
+    // set, and has to stay installed even when every other hook is idle.
+    %init(RelocateTelemetry);
 
     // Keeps a running app in step with the preferences without a restart.
     //
